@@ -1,0 +1,18 @@
+---
+- name: Get the newest stage3
+  ansible.builtin.uri:
+    url: "{{ mirror_autobuilds }}/{{ autobuild_amd64_openrc }}"
+    return_content: true
+    validate_certs: false
+  register: stage3_latest_get
+
+- name: Regex the newest gentoo stage3
+  ansible.builtin.set_fact:
+    stage3_latest: "{{ stage3_latest_get.content | regex_search('\n[0-9/-a-Z.a-z]+') | replace('\n','') }}"
+
+- name: Untar the Stage3
+  ansible.builtin.unarchive:
+    src: "{{ mirror_autobuilds }}/{{ stage3_latest }}"
+    dest: "{{ mount_gentoo }}"
+    remote_src: true
+    validate_certs: false

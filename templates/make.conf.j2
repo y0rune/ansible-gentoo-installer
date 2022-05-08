@@ -1,0 +1,27 @@
+COMMON_FLAGS="-march=native -O2 -pipe"
+CFLAGS="${COMMON_FLAGS}"
+CXXFLAGS="${CFLAGS}"
+FCFLAGS="${CFLAGS}"
+FFLAGS="${CFLAGS}"
+
+PORTAGE_BINHOST="http://packages.gentooexperimental.org/packages/"
+GENTOO_MIRRORS=""{{ mirror }}" \
+    https://mirror.eu.oneandone.net/linux/distributions/gentoo/gentoo/"
+
+MAKEOPTS="-j{{ nproc }} --load-average={{ load_avg }}"
+EMERGE_DEFAULT_OPTS="--jobs={{ nproc }} --load-average={{ load_avg }} --with-bdeps=y --keep-going=y"
+
+ACCEPT_LICENSE="*"
+# ACCEPT_KEYWORDS="~amd64"
+PORTAGE_REPO_DUPLICATE_WARN="0"
+
+USE="-bluetooth -kde -gnome -systemd"
+
+PORTDIR="/var/db/repos/gentoo"
+DISTDIR="/var/cache/distfiles"
+PKGDIR="/var/cache/binpkgs"
+CCACHE_DIR="/var/cache/ccache"
+
+LC_MESSAGES=C
+
+GRUB_PLATFORMS="pc efi-64"

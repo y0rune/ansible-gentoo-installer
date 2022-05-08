@@ -1,0 +1,79 @@
+---
+- name: Mount all drives
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" mount -a'
+  changed_when: false
+
+- name: Add locale
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" echo "en_US.UTF-8 UTF-8" > /etc/locale.gen'
+  changed_when: false
+
+- name: Generate and set locale
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" locale-gen; eselect locale set 3'
+  changed_when: false
+
+- name: Download the repo tree
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" emerge-webrsync'
+  changed_when: false
+
+- name: Update the gentoo
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" emerge -uDN @world'
+  changed_when: false
+
+- name: Delete /boot files in chroot
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" rm -rfv /boot/*'
+  changed_when: false
+
+- name: Emerge kernel
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" emerge sys-kernel/gentoo-kernel-bin'
+  changed_when: false
+
+- name: Set kernel in eselect
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" eselect kernel set 1'
+  changed_when: false
+
+- name: Install grub
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" emerge sys-boot/grub'
+  changed_when: false
+
+- name: Grub set in the drive
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" grub-install {{ hard_drive }}'
+  changed_when: false
+
+- name: Generate a proper grub
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" grub-mkconfig -o /boot/grub/grub.cfg'
+  changed_when: false
+
+- name: Install dhcpd
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" emerge net-misc/dhcpcd'
+  changed_when: false
+
+- name: Set dhcpd at startup
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" rc-update add dhcpcd default'
+  changed_when: false
+
+- name: Install sshd
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" emerge net-misc/openssh'
+  changed_when: false
+
+- name: Set sshd at startup
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" rc-update add sshd default'
+  changed_when: false
+
+- name: Allow to root login via ssh
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /etc/ssh/sshd_config'
+  changed_when: false
+
+- name: Set default password root
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" echo "root:{{ root_password }}" | chpasswd'
+  changed_when: false
+
+- name: Create a .ssh folder in the gentoo
+  ansible.builtin.command: chroot "{{ mount_gentoo }}" /bin/bash -c 'PATH="/usr/sbin:/usr/bin:/sbin:/bin" mkdir -p /root/.ssh'
+  changed_when: false
+
+- name: Copy authorized_keys file to gentoo
+  ansible.builtin.copy:
+    src: /root/.ssh/authorized_keys
+    dest: "{{ mount_gentoo }}/root/.ssh/authorized_keys"
+    mode: "0644"
+    remote_src: true

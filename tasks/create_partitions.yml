@@ -1,0 +1,58 @@
+---
+- name: Get info about partitions
+  community.general.parted:
+    device: "{{ hard_drive }}"
+    unit: TiB
+  register: hard_drive_info
+
+- name: Remove all partitions
+  community.general.parted:
+    device: /dev/sda
+    label: gpt
+    state: absent
+    number: "{{ item.num }}"
+  with_items: "{{ hard_drive_info.partitions }}"
+
+- name: Create partitions grub_part
+  community.general.parted:
+    device: "{{ hard_drive }}"
+    number: "{{ partitions.grub_part }}"
+    label: gpt
+    state: present
+    part_start: 1MiB
+    part_end: 3MiB
+    part_type: primary
+    flags: bios_grub
+
+- name: Create partitions boot_part
+  community.general.parted:
+    device: "{{ hard_drive }}"
+    number: "{{ partitions.boot_part }}"
+    label: gpt
+    state: present
+    part_start: 3MiB
+    part_end: 400MiB
+    part_type: primary
+    flags: boot
+
+- name: Create partitions root_part
+  community.general.parted:
+    device: "{{ hard_drive }}"
+    number: "{{ partitions.root_part }}"
+    label: gpt
+    state: present
+    name: rootfs
+    part_start: 400MiB
+    part_end: 100%
+
+- name: Format partition grub
+  community.general.filesystem:
+    device: "{{ hard_drive }}{{ partitions.grub_part }}"
+    force: true
+    fstype: ext4
+
+- name: Format partition root
+  community.general.filesystem:
+    device: "{{ hard_drive }}{{ partitions.root_part }}"
+    force: true
+    fstype: ext4

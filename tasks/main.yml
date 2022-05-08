@@ -1,0 +1,8 @@
+---
+- name: Load a vars
+  ansible.builtin.include_vars:
+    file: "vars/main.yml"
+
+- include_tasks: create_partitions.yml
+- include_tasks: pre_gentoo.yml
+- include_tasks: installation_gentoo.yml

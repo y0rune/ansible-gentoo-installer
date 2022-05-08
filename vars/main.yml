@@ -1,0 +1,21 @@
+hard_drive: /dev/sda
+partitions:
+  grub_part: 1
+  boot_part: 2
+  root_part: 3
+
+mount_gentoo: /mnt/gentoo
+hostname: gentoo
+root_password: yduiqiu1213EERT
+
+# Source: https://www.reddit.com/r/devops/comments/ewc22m/cant_convert_to_gigabytes_from_ansible/
+memory_amount: "{{ (ansible_memtotal_mb*0.75)|int|abs }}m"
+nproc: "{{ ansible_processor_nproc }}"
+load_avg: "6.4"
+
+username_mirror: hetzner
+password_mirror: download
+arch: amd64
+mirror: "https://{{ username_mirror }}:{{ password_mirror }}@download.hetzner.com/gentoo"
+mirror_autobuilds: "{{ mirror }}/releases/{{ arch }}/autobuilds"
+autobuild_amd64_openrc: "latest-stage3-amd64-openrc.txt"

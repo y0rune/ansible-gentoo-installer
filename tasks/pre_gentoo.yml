@@ -1,0 +1,94 @@
+---
+- name: Mount root partition
+  ansible.posix.mount:
+    src: "{{ hard_drive }}{{ partitions.root_part }}"
+    path: "{{ mount_gentoo }}"
+    state: mounted
+    fstype: ext4
+  changed_when: false
+
+- name: Mount boot partition
+  ansible.posix.mount:
+    src: "{{ hard_drive }}{{ partitions.boot_part }}"
+    path: "{{ mount_gentoo }}/boot"
+    state: mounted
+    fstype: ext4
+  changed_when: false
+
+- include_tasks: download_gentoo.yml
+
+- name: Mount /proc to gentoo
+  ansible.posix.mount:
+    src: /proc
+    path: "{{ mount_gentoo }}/proc"
+    state: mounted
+    fstype: proc
+  changed_when: false
+
+- name: Mount /sys to gentoo
+  ansible.posix.mount:
+    src: /sys
+    path: "{{ mount_gentoo }}/sys"
+    opts: rbind
+    state: mounted
+    fstype: none
+  changed_when: false
+
+- name: Mount /run to gentoo
+  ansible.posix.mount:
+    src: /run
+    path: "{{ mount_gentoo }}/run"
+    opts: bind
+    state: mounted
+    fstype: none
+  changed_when: false
+
+- name: Mount /dev to gentoo
+  ansible.posix.mount:
+    src: /dev
+    path: "{{ mount_gentoo }}/dev"
+    opts: rbind
+    state: mounted
+    fstype: none
+  changed_when: false
+
+- name: Copy resolve file
+  ansible.builtin.template:
+    src: templates/resolv.conf
+    dest: "{{ mount_gentoo }}/etc/resolv.conf"
+    mode: "0644"
+
+- name: Modify hostname
+  ansible.builtin.lineinfile:
+    path: "{{ mount_gentoo }}/etc/conf.d/hostname"
+    state: present
+    regexp: ^hostname=
+    line: 'hostname="{{ hostname }}"'
+
+- name: Set timezone
+  ansible.builtin.copy:
+    src: "{{ mount_gentoo }}/usr/share/zoneinfo/Europe/Warsaw"
+    dest: "{{ mount_gentoo }}/etc/localtime"
+    mode: "0644"
+    remote_src: true
+
+- name: Set eth0 using DHCP
+  ansible.builtin.lineinfile:
+    path: "{{ mount_gentoo }}/etc/net"
+    state: present
+    regexp: ^config_eth0
+    line: config_eth0="dhcp"
+    create: true
+    mode: "0644"
+
+- name: Copy fstab from template
+  ansible.builtin.template:
+    src: templates/fstab.j2
+    dest: "{{ mount_gentoo }}/etc/fstab"
+    mode: "0644"
+
+- name: Copy make.conf from template
+  ansible.builtin.template:
+    src: templates/make.conf.j2
+    dest: "{{ mount_gentoo }}/etc/portage/make.conf"
+    mode: "0644"
